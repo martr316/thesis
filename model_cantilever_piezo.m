@@ -29,6 +29,7 @@ close all;
 %produktblad
 whole_length = 0.0318;
 l = 0.0267;
+measure_point = l;
 width = 0.0032;
 w_i = [width,width,width];
 higth = 0.00013; %each
@@ -91,7 +92,7 @@ z_streck = -((sum((w_i./s_11).*h_i.^2))-(2*sum(del1)))/...
 %6.10-11
 k = k_ml./l;
 
-x=(0:1*10^-5:l);
+x=(0:1*10^-5:measure_point);
 
 kx_1 = k(1)*x;
 kx_2 = k(2)*x;
