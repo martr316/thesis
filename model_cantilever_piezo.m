@@ -193,7 +193,9 @@ tau_d_m= tau2-tau1; %[s]
 r = (2*m)/tau_d_m * log(fi1/fi2); %[Ns/m] 
 r_a = r/l; %[Ns/m^2]
 
+%test för att räkna ut dämpningskonstant (den är dock för 1000hz vilket är fel)
 damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2)
+%natural_freq_test =  (2*pi/tau_d_m)/sqrt(1-damping_const^2) %test
 
 % Values from plot
 % fi1 = 0.01143e-3;
@@ -406,24 +408,39 @@ supervector = ((4*m_piezo)/((l^2)*my))*(egen_1_l-egen_2_l+egen_3_l-egen_4_l+egen
 %23 and 24
 
 % w_m is the m:th undamped natural frequency
-% mest trolihgen fel!!!! damping = r_a/my;
 
-%Detta är korrekt!
- %delta_frekvens = the bandwidth, is the width of the range of frequencies for which the energy is at least half its peak value.
-resonance_freq = [224 1483 4315]; %[Hz]
+%delta_frekvens = the bandwidth, is the width of the range of frequencies for which the energy is at least half its peak value.
 
+%Försöker calculera dämpningen för strain and air according to article
+ resonance_freq = [224 1483 4315]; %[Hz]
 half_bb= [(233.4-215.7) (1538-1438) (4456-4155)];
- 
 Q = resonance_freq./half_bb;
-
 damping = (2*w_m(1)*w_m(2))/(w_m(1)^2-w_m(2)^2)*[Y_1/w_m(2) -Y_1/w_m(1); -m*w_m(2) m*w_m(1)]*[Q(1:2)]';
 cs = damping(1);
 ca= damping(2);
 
 
-% 
-% vib_modes=4;
-% alpha = [ones(1,length(w_m(1:vib_modes))); w_m(1:vib_modes).^2]'\[2*damping*w_m(1:vib_modes)]'
+% Calcultae constants for damping
+ vib_modes=2;
+ constants_for_damping = [ones(1,length(w_m(1:vib_modes))); w_m(1:vib_modes).^2]'\[2*damping_const*w_m(1:vib_modes)]';
+alpha = constants_for_damping(1);
+beta = constants_for_damping(2);
+
+
+%New try to build a model from transferfunction
+M = 1; %????
+m_pi = M*X_m_d;
+
+number_of_modes=2;
+for n = 1:number_of_modes
+deflection(n) = X_m(n)*m_pi(n)/w_m(n);
+end
+
+%numbers for damping is hittepå (0.01 and 0.03)
+s=tf('s');
+F = m_pi(1)*X_m(1)/(s^2+2*0.01*w_m(1)*s + w_m(1)^2) +m_pi(2)*X_m(2)/(s^2+2*0.03*w_m(2)*s + w_m(2)^2)
+figure(22)
+bode(F)
 
 
 %% Bilder från experiment
