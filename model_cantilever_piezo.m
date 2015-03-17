@@ -28,7 +28,7 @@ close all;
 
 %produktblad
 whole_length = 0.0318;
-l = 0.0267;
+l = 0.0274;
 width = 0.0032;
 w_i = [width,width,width];
 higth = 0.00013; %each
@@ -55,11 +55,12 @@ T_e = 3*10^(-6);
 T_c = 230;
 
 %table 6.1
-%syms a
-%vpasolve(1+cos(a).*cosh(a)==0,a, [0 10],'random',true)
-%result solved from (6.24) 1+cos(kl)cosh(kl)=0
+%chose interval for solution in []
+% syms a
+% vpasolve(1+cos(a).*cosh(a)==0,a, [17 25],'random',true)
+% result solved from (6.24) 1+cos(kl)cosh(kl)=0
 
-k_ml = [1.8751,4.6941,7.8548,10.9955,14.137];
+k_ml = [1.8751,4.6941,7.8548,10.9955,14.137, 17.27875, 20.4203522, 23.561944];
 
 m = sum(rho*l.*width.*higth);
 
@@ -134,6 +135,7 @@ X_m_3 = c_wave_3-s_wave_3 * (C_wave(3) / S_wave(3));
 X_m_4 = c_wave_4-s_wave_4 * (C_wave(4) / S_wave(4));
 X_m_5 = c_wave_5-s_wave_5 * (C_wave(5) / S_wave(5));
 
+%Felaktig derivata, använd den nedan!
 %X_m_d = c_wave_d-(s_wave_d.*(C_wave./S_wave) + s_wave.*((C_wave_d.*S_wave - C_wave.*S_wave_d)./(S_wave.^2))); % x = l
 
 X_m_d = k.*(S_wave - c_wave.*C_wave./S_wave);
@@ -159,20 +161,7 @@ my = sum(rho.*h_i.*w_i); %båda ger samma
 %6.25
 w_m = ((k_ml.^2)./(l^2))*sqrt(C/my);
 
-%% 6.71
 
-%6.71
-%freq = (1:7.7245:500000); 
-freq = (20:0.045306122448980:20000);
-%ex_freq = 1.1*10^3; %TODO: ÄNDRA TILL BEROENDE AV INSIGNAL
-%ex_freq = 7.1*10^3;
-ex_freq = 1.1*10^3;
-ny_m = (ex_freq*2*pi)./w_m;
-ny_m_1 = (freq*2*pi)./w_m(1);
-ny_m_2 = (freq*2*pi)./w_m(2);
-ny_m_3 = (freq*2*pi)./w_m(3);
-ny_m_4 = (freq*2*pi)./w_m(4);
-ny_m_5 = (freq*2*pi)./w_m(5);
 
 %% 6.83
 
@@ -204,6 +193,7 @@ tau_d_m= tau2-tau1; %[s]
 r = (2*m)/tau_d_m * log(fi1/fi2); %[Ns/m] 
 r_a = r/l; %[Ns/m^2]
 
+damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2)
 
 % Values from plot
 % fi1 = 0.01143e-3;
@@ -216,9 +206,30 @@ r_a = r/l; %[Ns/m^2]
 % r = (2 * m)/tau_d_m * log(fi1/fi2)*2 %[Ns/m]
 % r_a = r/l; %[Ns/m^2]
 
-%% 9.20
 
-u_0 = 2; %[V]
+
+%% 6.71
+
+ex_freq = 1.1*10^3;
+ny_m = (ex_freq*2*pi)./w_m;
+%6.71
+%freq = (1:7.7245:500000); 
+%freq = (20:0.045306122448980:20000);
+freq = (20:0.007551020408163:20000-0.007551020408163);
+%ex_freq = 1.1*10^3; %TODO: ÄNDRA TILL BEROENDE AV INSIGNAL
+%ex_freq = 7.1*10^3;
+
+
+ny_m_1 = (freq*2*pi)./w_m(1);
+ny_m_2 = (freq*2*pi)./w_m(2);
+ny_m_3 = (freq*2*pi)./w_m(3);
+ny_m_4 = (freq*2*pi)./w_m(4);
+ny_m_5 = (freq*2*pi)./w_m(5);
+
+%% 9.20
+u_0 = 0.78; %[V]
+load('chirp20_20000Hz60sek.mat')
+u_0 = MeasureddataVoltage.Data';
 
 egen_1_l = ((X_m(1)*k_ml(1)*alpha_m_kml(1)*u_0)./...
     ((w_m(1)^2)*sqrt((1-ny_m_1.^2).^2+((2*r_a*ny_m_1)/(w_m(1)*my)).^2)));
@@ -235,24 +246,24 @@ egen_4_l = ((X_m(4)*k_ml(4)*alpha_m_kml(4)*u_0)./...
 egen_5_l = ((X_m(5)*k_ml(5)*alpha_m_kml(5)*u_0)./...
     ((w_m(5)^2)*sqrt((1-ny_m_5.^2).^2+((2*r_a*ny_m_5)/(w_m(5)*my)).^2)));
 
-egen_1 = ((X_m_1*k_ml(1)*alpha_m_kml(1)*u_0)/...
-    ((w_m(1)^2)*sqrt((1-ny_m(1)^2)^2+((2*r_a*ny_m(1))/(w_m(1)*my))^2)));
+% egen_1 = ((X_m_1*k_ml(1)*alpha_m_kml(1)*u_0)/...
+%     ((w_m(1)^2)*sqrt((1-ny_m(1)^2)^2+((2*r_a*ny_m(1))/(w_m(1)*my))^2)));
+% 
+% egen_2 = ((X_m_2*k_ml(2)*alpha_m_kml(2)*u_0)/...
+%     ((w_m(2)^2)*sqrt((1-ny_m(2)^2)^2+((2*r_a*ny_m(2))/(w_m(2)*my))^2)));
+% 
+% egen_3 = ((X_m_3*k_ml(3)*alpha_m_kml(3)*u_0)/...
+%     ((w_m(3)^2)*sqrt((1-ny_m(3)^2)^2+((2*r_a*ny_m(3))/(w_m(3)*my))^2)));
+% 
+% egen_4 = ((X_m_4*k_ml(4)*alpha_m_kml(4)*u_0)/...
+%     ((w_m(4)^2)*sqrt((1-ny_m(4)^2)^2+((2*r_a*ny_m(4))/(w_m(4)*my))^2)));
+% 
+% egen_5 = ((X_m_5*k_ml(5)*alpha_m_kml(5)*u_0)/...
+%     ((w_m(5)^2)*sqrt((1-ny_m(5)^2)^2+((2*r_a*ny_m(5))/(w_m(5)*my))^2)));
 
-egen_2 = ((X_m_2*k_ml(2)*alpha_m_kml(2)*u_0)/...
-    ((w_m(2)^2)*sqrt((1-ny_m(2)^2)^2+((2*r_a*ny_m(2))/(w_m(2)*my))^2)));
-
-egen_3 = ((X_m_3*k_ml(3)*alpha_m_kml(3)*u_0)/...
-    ((w_m(3)^2)*sqrt((1-ny_m(3)^2)^2+((2*r_a*ny_m(3))/(w_m(3)*my))^2)));
-
-egen_4 = ((X_m_4*k_ml(4)*alpha_m_kml(4)*u_0)/...
-    ((w_m(4)^2)*sqrt((1-ny_m(4)^2)^2+((2*r_a*ny_m(4))/(w_m(4)*my))^2)));
-
-egen_5 = ((X_m_5*k_ml(5)*alpha_m_kml(5)*u_0)/...
-    ((w_m(5)^2)*sqrt((1-ny_m(5)^2)^2+((2*r_a*ny_m(5))/(w_m(5)*my))^2)));
-
-epsilon_1_n = -((4*m_piezo)/((l^2)*my))*(egen_1);
-epsilon_1_p = ((4*m_piezo)/((l^2)*my))*(egen_1);
-epsilon_1 = ((4*m_piezo)/((l^2)*my))*(egen_1).*cos(ex_freq*(x*1000));
+% epsilon_1_n = -((4*m_piezo)/((l^2)*my))*(egen_1);
+% epsilon_1_p = ((4*m_piezo)/((l^2)*my))*(egen_1);
+% epsilon_1 = ((4*m_piezo)/((l^2)*my))*(egen_1).*cos(ex_freq*(x*1000));
 epsilon_1_l = ((4*m_piezo)/((l^2)*my))*(egen_1_l);
 
 %% 7.98
@@ -283,7 +294,7 @@ Q_m = 1./(w_m.*n_m.*r_star);
 %% 9.33
 
 freq_Hz = 20:20000;
-modes=3;
+modes=6;
 
 epsilon_u_piezo = zeros(size(freq_Hz));
 
@@ -321,37 +332,37 @@ B_1 = polyval(polyfit(punkter_x,punkter_y,2),1:20000);                          
 
 B_3 = 5*10^3;                                                                   %TODO: måste ändras, värdet för boken
 
-%B_0 = B_1 + 20*log10(abs(B_3*epsilon_u_piezo));
-B_0 = -60 + 20*log10(abs(B_3*epsilon_u_piezo));
+B_0 = 20*log10(abs(epsilon_u_piezo));
+%B_0 = -60 + 20*log10(abs(B_3*epsilon_u_piezo));
 
 %% plots
 % figure(6)
 % semilogx(B_0);
 
 % figure(1)
-%subplot(1,2,1)
-%plot((x*1000),epsilon_1)
-%plot(epsilon_1_l(1:10000))
+% subplot(1,2,1)
+% plot((x*1000),epsilon_1)
+% plot(epsilon_1_l(1:10000))
 %  hold on
 %  plot(epsilon_1_n)
 %  plot(epsilon_1_p)
-%subplot(1,2,2)
-%plot(abs(fft(epsilon_1)));
+% subplot(1,2,2)
+% plot(abs(fft(epsilon_1)));
 
-epsilon_2_n = -((4*m_piezo)/((l^2)*my))*(egen_1 + egen_2);
-epsilon_2_p = ((4*m_piezo)/((l^2)*my))*(egen_1 + egen_2);
-epsilon_2 = ((4*m_piezo)/((l^2)*my))*(egen_2).*cos(ex_freq*(x*1000));
+% epsilon_2_n = -((4*m_piezo)/((l^2)*my))*(egen_1 + egen_2);
+% epsilon_2_p = ((4*m_piezo)/((l^2)*my))*(egen_1 + egen_2);
+% epsilon_2 = ((4*m_piezo)/((l^2)*my))*(egen_2).*cos(ex_freq*(x*1000));
 epsilon_2_l = ((4*m_piezo)/((l^2)*my))*(egen_2_l);
 
-%figure(2)
-%plot((x*1000),epsilon_2)
-%semilogy(epsilon_2_l)
-%hold on
-%plot(epsilon_2_n)
-%plot(epsilon_2_p)
+% figure(2)
+% plot((x*1000),epsilon_2)
+% semilogy(epsilon_2_l)
+% hold on
+% plot(epsilon_2_n)
+% plot(epsilon_2_p)
 
-supervector = ((4*m_piezo)/((l^2)*my))*(egen_1_l+egen_2_l+egen_3_l+egen_4_l+egen_5_l);
-supervector_2 = -((4*m_piezo)/((l^2)*my))*(egen_1_l+egen_2_l+egen_3_l+egen_4_l+egen_5_l);
+supervector = ((4*m_piezo)/((l^2)*my))*(egen_1_l-egen_2_l+egen_3_l-egen_4_l+egen_5_l);
+% supervector_2 = -((4*m_piezo)/((l^2)*my))*(egen_1_l-egen_2_l+egen_3_l-egen_4_l+egen_5_l);
 % figure(8)
 % plot(supervector)
 % figure(9)
@@ -390,22 +401,50 @@ supervector_2 = -((4*m_piezo)/((l^2)*my))*(egen_1_l+egen_2_l+egen_3_l+egen_4_l+e
 % plot((x*1000),epsilon_5_n)
 % plot((x*1000),epsilon_5_p)
 
+
+%% Räknande från artikel 2015 H ghafarirad
+%23 and 24
+
+% w_m is the m:th undamped natural frequency
+% mest trolihgen fel!!!! damping = r_a/my;
+
+%Detta är korrekt!
+ %delta_frekvens = the bandwidth, is the width of the range of frequencies for which the energy is at least half its peak value.
+resonance_freq = [224 1483 4315]; %[Hz]
+
+half_bb= [(233.4-215.7) (1538-1438) (4456-4155)];
+ 
+Q = resonance_freq./half_bb;
+
+damping = (2*w_m(1)*w_m(2))/(w_m(1)^2-w_m(2)^2)*[Y_1/w_m(2) -Y_1/w_m(1); -m*w_m(2) m*w_m(1)]*[Q(1:2)]';
+cs = damping(1);
+ca= damping(2);
+
+
+% 
+% vib_modes=4;
+% alpha = [ones(1,length(w_m(1:vib_modes))); w_m(1:vib_modes).^2]'\[2*damping*w_m(1:vib_modes)]'
+
+
 %% Bilder från experiment
 
-load('chirp20_20000Hz.mat')
+%load('chirp20_20000Hz.mat')
+
 Fs=44100; % Sample frequency (Hz)
 
 Total_samples = MeasureddataExcersion.Total_Samples;
 
 figure(1)
+plot((1:Total_samples)/Fs,supervector)
+%plot((1:Total_samples)/Fs,supervector_2)
+hold on;
 plot((1:Total_samples)/Fs,MeasureddataExcersion.Data(1:Total_samples)*1e-3)
 title('Excursion chirp 20-20000Hz')
 xlabel('Seconds')
 ylabel('Milimeter')
-hold on;
-plot((1:Total_samples)/Fs,supervector)
-plot((1:Total_samples)/Fs,supervector_2)
+legend( 'Model','Measurement')
 hold off;
+
 
 figure(2)
 NFFT = 2^nextpow2(Total_samples); % Next power of 2 from length of y
@@ -417,9 +456,11 @@ xlabel('Frequency (Hz)')
 ylabel('|Input(f)|')
 
 figure(3)
-semilogx(B_0)
-hold on;
 db = mag2db(2*abs(Y(1:NFFT/2+1)));
-loglog(f,db) 
+loglog(f,db)
+hold on;
+semilogx(B_0)
+title('Spectrum of chirp 20-20000Hz')
+legend('Measurement','Model')
 
 
