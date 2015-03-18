@@ -287,18 +287,24 @@ n_0 = (l^3)/C; %7.40
 n_m = (4*n_0)./((k_ml).^4);
 
 %% 9.31
+%Calculated according to file: ra_constant.m
+r = [0.0042 0.3928 0.2226];
 
-r_star = r/4;
+
+
+
+r_star = r./4;
 
 m_star = m/4;
 
-Q_m = 1./(w_m.*n_m.*r_star);
+%Q_m = 1./(w_m.*n_m.*r_star);
+Q_m = 1./(w_m(1:3).*n_m(1:3).*r_star);
 %Q_m = 1./((r*l./(k_ml).^2)*sqrt(1/(C*my))); %ger samma
 
 %% 9.33
 
 freq_Hz = 20:20000;
-modes=5;
+modes=3;
 
 epsilon_u_piezo = zeros(size(freq_Hz));
 
@@ -315,11 +321,11 @@ s=tf('s');
 
 for n=1:modes
     H(n) = (1/(s*Y))*((X_m(n)*X_m_d(n))/...
-         ((1/(s*n_m(n)))+(s*m_star)+r_star));
+         ((1/(s*n_m(n)))+(s*m_star)+r_star(n)));
 end
      
 %H_total= (1/Y)*(H(1)+H(2)+H(3)+H(4)+H(5));
-H_total= H(1)+H(2)+H(3)+H(4)+H(5);
+H_total= H(1)+H(2)+H(3);
 H_total= minreal(H_total);
 figure(24)
 bd=bodeplot(H_total, 'k');
@@ -329,11 +335,11 @@ setoptions(bd,'FreqUnits','Hz','PhaseVisible','off');
 %% 9.27
 m_star = m/4;
 
-epsilon_u_piezo_2 = zeros(size(freq_Hz));
-
-for w = freq_Hz; 
-    epsilon_u_piezo_2(w) = (1/(1j*(w*2*pi)*Y))*sum((X_m(1:2).*X_m_d(1:2))./((1./(1j*(w*2*pi).*n_m(1:2)))+(1j*(w*2*pi)*m_star)*r_star));
-end
+% epsilon_u_piezo_2 = zeros(size(freq_Hz));
+% 
+% for w = freq_Hz; 
+%     epsilon_u_piezo_2(w) = (1/(1j*(w*2*pi)*Y))*sum((X_m(1:2).*X_m_d(1:2))./((1./(1j*(w*2*pi).*n_m(1:2)))+(1j*(w*2*pi)*m_star)*r_star));
+% end
 
 %% B1
 
@@ -355,7 +361,7 @@ B_1 = polyval(polyfit(punkter_x,punkter_y,2),1:20000);                          
 
 B_3 = 5*10^3;                                                                   %TODO: måste ändras, värdet för boken
 
-B_0 = 20*log10(abs(epsilon_u_piezo));
+B_0 = 8 + 20*log10(abs(epsilon_u_piezo));
 %B_0 = -60 + 20*log10(abs(B_3*epsilon_u_piezo));
 
 %% plots
