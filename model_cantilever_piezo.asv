@@ -193,6 +193,7 @@ tau_d_m= tau2-tau1; %[s]
 r = (2*m)/tau_d_m * log(fi1/fi2); %[Ns/m] 
 r_a = r/l; %[Ns/m^2]
 
+%test för att räkna ut dämpningskonstant (den är dock för 1000hz vilket är fel)
 damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2)
 %natural_freq_test =  (2*pi/tau_d_m)/sqrt(1-damping_const^2) %test
 
@@ -289,13 +290,15 @@ n_m = (4*n_0)./((k_ml).^4);
 
 r_star = r/4;
 
+m_star = m/4;
+
 Q_m = 1./(w_m.*n_m.*r_star);
 %Q_m = 1./((r*l./(k_ml).^2)*sqrt(1/(C*my))); %ger samma
 
 %% 9.33
 
 freq_Hz = 20:20000;
-modes=6;
+modes=5;
 
 epsilon_u_piezo = zeros(size(freq_Hz));
 
@@ -303,6 +306,25 @@ for w = freq_Hz;
     epsilon_u_piezo(w) = (1/Y)*sum(((n_m(1:modes).*X_m(1:modes).*X_m_d(1:modes)).*(1-((w*2*pi)./w_m(1:modes)).^2+1i.*((w*2*pi)./w_m(1:modes)).*(1./Q_m(1:modes))))./...
         (((1-((w*2*pi)./w_m(1:modes)).^2).^2)+(((w*2*pi)./w_m(1:modes)).*(1./Q_m(1:modes))).^2));
 end
+s=tf('s');
+
+for n=1:modes
+    H(n) = (n_m(n)*X_m(n)*X_m_d(n))/...
+         ((1-(s/(w_m(n))^2))+1i*((s/w_m(n))*(1/Q_m(n))));
+end
+
+for n=1:modes
+    H(n) = (1/(s*Y))*((X_m(n)*X_m_d(n))/...
+         ((1/(s*n_m))+(s*m_star)+r_star));
+end
+     
+%H_total= (1/Y)*(H(1)+H(2)+H(3)+H(4)+H(5));
+H_total= H(1)+H(2)+H(3)+H(4)+H(5);
+H_total= minreal(H_total);
+figure(24)
+bd=bodeplot(H_total, 'k');
+setoptions(bd,'FreqUnits','Hz','PhaseVisible','off');
+
 
 %% 9.27
 m_star = m/4;
@@ -407,40 +429,52 @@ supervector = ((4*m_piezo)/((l^2)*my))*(egen_1_l-egen_2_l+egen_3_l-egen_4_l+egen
 %23 and 24
 
 % w_m is the m:th undamped natural frequency
-% mest trolihgen fel!!!! damping = r_a/my;
 
-%Detta är korrekt!
- %delta_frekvens = the bandwidth, is the width of the range of frequencies for which the energy is at least half its peak value.
-resonance_freq = [224 1483 4315]; %[Hz]
+%delta_frekvens = the bandwidth, is the width of the range of frequencies for which the energy is at least half its peak value.
 
+%Försöker calculera dämpningen för strain and air according to article
+ resonance_freq = [224 1483 4315]; %[Hz]
 half_bb= [(233.4-215.7) (1538-1438) (4456-4155)];
- 
 Q = resonance_freq./half_bb;
-
 damping = (2*w_m(1)*w_m(2))/(w_m(1)^2-w_m(2)^2)*[Y_1/w_m(2) -Y_1/w_m(1); -m*w_m(2) m*w_m(1)]*[Q(1:2)]';
 cs = damping(1);
 ca= damping(2);
 
 
-% 
- vib_modes=2;
- constants_for_damping = [ones(1,length(w_m(1:vib_modes))); w_m(1:vib_modes).^2]'\[2*damping_const*w_m(1:vib_modes)]';
+% Calcultae constants for damping
+vib_modes=2;
+constants_for_damping = [ones(1,length(w_m(1:vib_modes))); w_m(1:vib_modes).^2]'\[2*damping_const*w_m(1:vib_modes)]';
 alpha = constants_for_damping(1);
 beta = constants_for_damping(2);
 
-M = 1; %????
-m_pi = M*X_m_d;
 
-number_of_modes=2;
+%New try to build a model from transferfunction
+M_p = width.*higth.*d_31(1)*Y_1; % -12.54 taget från tabellen på sid 143 %ekvation 11 2015 H ghafarirad
+m_pi = -M_p*X_m_d;
+
+number_of_modes=5;
+
 for n = 1:number_of_modes
 deflection(n) = X_m(n)*m_pi(n)/w_m(n);
 end
 
+%numbers for damping is hittepå (0.01 and 0.03)
 s=tf('s');
-F= m_pi(1)*X_m(1)/(s^2+2*damping_const*w_m(1)*s + w_m(1)^2) +m_pi(2)*X_m(2)/(s^2+2*damping_const*w_m(2)*s + w_m(2)^2)
+damping_const = [0.01 0.03 0.1 0.2 0.25];
 
+for n=1:number_of_modes
+F(n) = m_pi(n)*X_m(n)/(s^2+2*damping_const(n)*w_m(n)*s + w_m(n)^2);
+end
 
-%sum(deflection)*hysteres_func
+F_total=0;
+for n=1:number_of_modes
+F_total = F(n)+F_total;
+end
+
+% figure(22)
+% h=bodeplot(F_total);
+% setoptions(h,'FreqUnits','Hz','PhaseVisible','off');
+
 
 %% Bilder från experiment
 
@@ -464,15 +498,15 @@ hold off;
 
 figure(2)
 NFFT = 2^nextpow2(Total_samples); % Next power of 2 from length of y
-Y = fft(MeasureddataExcersion.Data(1:Total_samples),NFFT)/Total_samples;
+Y_fft = fft(MeasureddataExcersion.Data(1:Total_samples),NFFT)/Total_samples;
 f = Fs/2*linspace(0,1,NFFT/2+1);
-plot(f,2*abs(Y(1:NFFT/2+1))) 
+plot(f,2*abs(Y_fft(1:NFFT/2+1))) 
 title('FFT of chirp 20-20000Hz')
 xlabel('Frequency (Hz)')
 ylabel('|Input(f)|')
 
 figure(3)
-db = mag2db(2*abs(Y(1:NFFT/2+1)));
+db = mag2db(2*abs(Y_fft(1:NFFT/2+1)));
 loglog(f,db)
 hold on;
 semilogx(B_0)
