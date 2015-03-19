@@ -289,6 +289,7 @@ n_m = (4*n_0)./((k_ml).^4);
 %% 9.31
 %Calculated according to file: ra_constant.m
 r = [0.0042 0.3928 0.2226];
+%hejsan
 
 
 
