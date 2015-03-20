@@ -289,8 +289,7 @@ n_m = (4*n_0)./((k_ml).^4);
 %% 9.31
 %Calculated according to file: ra_constant.m
 r = [0.0042 0.3928 0.2226];
-%hejsan
-
+%r = ones(1,3)*0.0042;
 
 
 
@@ -320,6 +319,7 @@ s=tf('s');
 %          ((1-(s/(w_m(n))^2))+1i*((s/w_m(n))*(1/Q_m(n))));
 % end
 
+% 9.27
 for n=1:modes
     H(n) = (1/(s*Y))*((X_m(n)*X_m_d(n))/...
          ((1/(s*n_m(n)))+(s*m_star)+r_star(n)));

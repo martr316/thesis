@@ -1,0 +1,12 @@
+a1 = simpleConvertTDMS('DCstep_5V_Jadetär5V.tdms');
+a2 = simpleConvertTDMS('DCstep_10V_Jadetär10V.tdms');
+a3 = simpleConvertTDMS('DCstep_15V_Jadetär15V.tdms');
+a4 = simpleConvertTDMS('DCstep_20V_Jadetär20V.tdms');
+a5 = simpleConvertTDMS('DCstep_25V_Jadetär25V.tdms');
+a6 = simpleConvertTDMS('DCstep_30V_Jadetär30V.tdms');
+a7 = simpleConvertTDMS('multisin205_730_1430Hz.tdms');
+a8 = simpleConvertTDMS('multisin205_1000Hz.tdms');
+a9 = simpleConvertTDMS('multisin1430_5000Hz.tdms');
+a10 = simpleConvertTDMS('musltisin205_500_760_1100_1430_2500_4315_6000Hz.tdms');
+a11 = simpleConvertTDMS('noise2000_2400Hz.tdms');
+a12 = simpleConvertTDMS('noise100_1000Hz.tdms');
