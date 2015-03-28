@@ -25,6 +25,9 @@ title('Error')
 xlabel('Time [s]')
 ylabel('Error [m]')
 
+data = iddata(MeasureddataExcersion.Data/1000,MeasureddataVoltage.Data,1/fs)
+compare(data,H_total)
+
 %% Multisin 205 and 1000hz
 load('H_total')
 load('multisin205_1000Hz')
@@ -49,6 +52,10 @@ plot(time,error)
 title('Error')
 xlabel('Time [s]')
 ylabel('Error [m]')
+
+% calcultate model fit for the model
+data = iddata(MeasureddataExcersion.Data/1000,MeasureddataVoltage.Data,1/fs)
+compare(data,H_total)
 
 %% Multisin 1430 and 5000hz
 load('H_total')

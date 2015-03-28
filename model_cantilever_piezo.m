@@ -161,8 +161,6 @@ my = sum(rho.*h_i.*w_i); %båda ger samma
 %6.25
 w_m = ((k_ml.^2)./(l^2))*sqrt(C/my);
 
-
-
 %% 6.83
 
 %6.83
@@ -194,7 +192,7 @@ r = (2*m)/tau_d_m * log(fi1/fi2); %[Ns/m]
 r_a = r/l; %[Ns/m^2]
 
 %test för att räkna ut dämpningskonstant (den är dock för 1000hz vilket är fel)
-damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2)
+damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2);
 %natural_freq_test =  (2*pi/tau_d_m)/sqrt(1-damping_const^2) %test
 
 % Values from plot
@@ -208,8 +206,6 @@ damping_const= 1/sqrt(1+(2*pi/(log(fi1/fi2))/q)^2)
 % r = (2 * m)/tau_d_m * log(fi1/fi2)*2 %[Ns/m]
 % r_a = r/l; %[Ns/m^2]
 
-
-
 %% 6.71
 
 ex_freq = 1.1*10^3;
@@ -217,10 +213,14 @@ ny_m = (ex_freq*2*pi)./w_m;
 %6.71
 %freq = (1:7.7245:500000); 
 %freq = (20:0.045306122448980:20000);
-freq = (20:0.007551020408163:20000-0.007551020408163);
 %ex_freq = 1.1*10^3; %TODO: ÄNDRA TILL BEROENDE AV INSIGNAL
 %ex_freq = 7.1*10^3;
+%freq = (20:0.007551020408163:20000-0.007551020408163);
 
+
+load('chirp20-20kHz.mat')
+Total_Samples=MeasureddataExcersion.Total_Samples;
+freq = (20:(20000-20)/Total_Samples:20000-(20000-20)/Total_Samples);
 
 ny_m_1 = (freq*2*pi)./w_m(1);
 ny_m_2 = (freq*2*pi)./w_m(2);
@@ -229,8 +229,7 @@ ny_m_4 = (freq*2*pi)./w_m(4);
 ny_m_5 = (freq*2*pi)./w_m(5);
 
 %% 9.20
-u_0 = 0.78; %[V]
-load('chirp20_20000Hz60sek.mat')
+
 u_0 = MeasureddataVoltage.Data';
 
 egen_1_l = ((X_m(1)*k_ml(1)*alpha_m_kml(1)*u_0)./...
@@ -287,24 +286,59 @@ n_0 = (l^3)/C; %7.40
 n_m = (4*n_0)./((k_ml).^4);
 
 %% 9.31
-%Calculated according to file: ra_constant.m
-r = [0.0042 0.3928 0.2226];
-%r = ones(1,3)*0.0042;
+modes=3;
+% OPTIMIZED by hand, looking at the frequence response
+r = [0.018 0.15 0.4];
+%r = [0.018 0.15 0.4 10.0];
+%r = [0.018 0.15 0.4 2.0 3.5];
 
-
+% Optimized r values DO NOT USE -> model becomes unstable!
+%r = [0.041157349254970  -0.195651626366985   2.517533512771213];
 
 r_star = r./4;
-
 m_star = m/4;
 
 %Q_m = 1./(w_m.*n_m.*r_star);
-Q_m = 1./(w_m(1:3).*n_m(1:3).*r_star);
+Q_m = 1./(w_m(1:modes).*n_m(1:modes).*r_star);
 %Q_m = 1./((r*l./(k_ml).^2)*sqrt(1/(C*my))); %ger samma
+
+%% Find the frequency response for SLA1 amplifier
+ load('förstärkare_kapacitans_40kHz_29nF')
+ data2=MeasureddataVoltage.Data;
+ 
+Fs=44100;
+L = length(MeasureddataVoltage.Data);
+
+NFFT = 2^nextpow2(L); % Next power of 2 from length of y
+out_fft = fft(MeasureddataVoltage.Data,NFFT)/L;
+in_fft = fft(MeasureddataInput.Data,NFFT)/L;
+f = Fs/2*linspace(0,1,NFFT/2+1);
+
+amplifier_fft = out_fft./in_fft;
+fft_freq =2*abs(amplifier_fft(1:NFFT/2+1));
+% Plot single-sided amplitude spectrum.
+figure(57)
+plot(f,mag2db(fft_freq))
+title('Single-Sided Amplitude Spectrum of y(t)')
+xlabel('Frequency (Hz)')
+ylabel('|Y(f)|')
+hold on
+
+
+cutoff_sample=12e4;
+p = polyfit(1:cutoff_sample,fft_freq(1:cutoff_sample)',2);
+y1=polyval(p,1:cutoff_sample);
+plot(f(1:cutoff_sample),mag2db(y1))
+hold off
+
+
+%restore old values
+load('chirp20-20kHz.mat')
 
 %% 9.33
 
 freq_Hz = 20:20000;
-modes=3;
+
 
 epsilon_u_piezo = zeros(size(freq_Hz));
 
@@ -319,15 +353,32 @@ s=tf('s');
 %          ((1-(s/(w_m(n))^2))+1i*((s/w_m(n))*(1/Q_m(n))));
 % end
 
+% Detta finns här eftersom måste ha N_epsilon för att veta hur lång
+% B_amplifiervektorn ska vara. 
+N_epsilon = length(epsilon_u_piezo);
+B_amplifier = polyval(p,1:N_epsilon);
+
 % 9.27
 for n=1:modes
     H(n) = (1/(s*Y))*((X_m(n)*X_m_d(n))/...
          ((1/(s*n_m(n)))+(s*m_star)+r_star(n)));
 end
-     
-%H_total= (1/Y)*(H(1)+H(2)+H(3)+H(4)+H(5));
-H_total= H(1)+H(2)+H(3);
+
+AMP = tf(p,1);
+
+H_modes=0;
+for i=1:modes
+    H_modes=H_modes + H(i);
+end 
+
+H_total= H_modes*AMP;
+
+%Johns optimersingsiffror som har kommit från att ha testat med filen
+%validate_model.m
+
+H_total= H_total*-0.06;
 H_total= minreal(H_total);
+
 figure(24)
 bd=bodeplot(H_total, 'k');
 setoptions(bd,'FreqUnits','Hz','PhaseVisible','off');
@@ -356,13 +407,17 @@ B_1 = polyval(polyfit(punkter_x,punkter_y,2),1:20000);                          
 %hold off;
 
 
+
 %% 9.34
 
 %B_1 = 20;
 
-B_3 = 5*10^3;                                                                   %TODO: måste ändras, värdet för boken
+%B_3 = 5*10^3;                                                                   %TODO: måste ändras, värdet för boken
 
-B_0 = 8 + 20*log10(abs(epsilon_u_piezo));
+
+
+
+B_0 = 20*log10(B_amplifier) + 20*log10(abs(epsilon_u_piezo));
 %B_0 = -60 + 20*log10(abs(B_3*epsilon_u_piezo));
 
 %% plots
@@ -519,5 +574,4 @@ hold on;
 semilogx(B_0)
 title('Spectrum of chirp 20-20000Hz')
 legend('Measurement','Model')
-
 
